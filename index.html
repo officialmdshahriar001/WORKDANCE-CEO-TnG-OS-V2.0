@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>CEO OS v4.2 — AI Execution Engine</title>
+
+<style>
+  :root { 
+    --bg: #0b0b12; 
+    --card: #1c1c2f; 
+    --accent: #34d399; 
+    --text: #ffffff; 
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --success: #34d399;
+  }
+  body { 
+    margin: 0; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    background: var(--bg); 
+    color: var(--text); 
+    padding-bottom: 80px; 
+  }
+  header { 
+    padding: 15px; 
+    background: #111; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    position: sticky; 
+    top: 0; 
+    border-bottom: 1px solid #333; 
+    z-index: 100;
+  }
+  .container { padding: 15px; }
+  .card { background: var(--card); padding: 15px; margin-top: 10px; border-radius: 8px; }
+  button { 
+    padding: 12px; 
+    width: 100%; 
+    margin-top: 10px; 
+    border: none; 
+    border-radius: 8px; 
+    background: var(--danger); 
+    color: white; 
+    font-weight: bold; 
+    cursor: pointer; 
+    font-size: 14px;
+  }
+  button:active { transform: scale(0.98); }
+  button.ai-btn { background: var(--accent); color: #000; }
+  button.success-btn { background: var(--success); color: #000; }
+  button.warning-btn { background: var(--warning); color: #000; }
+  button.secondary-btn { background: #444; color: white; width: auto; padding: 8px 12px; }
+  input, select { 
+    width: 100%; 
+    padding: 12px; 
+    margin-top: 8px; 
+    border-radius: 6px; 
+    border: 1px solid #333; 
+    background: #2a2a40; 
+    color: white; 
+    box-sizing: border-box; 
+    font-size: 14px;
+  }
+  .ai-box { 
+    background: #15152a; 
+    padding: 15px; 
+    border-left: 4px solid var(--accent); 
+    margin-top: 15px; 
+    border-radius: 0 8px 8px 0; 
+  }
+  .ai-section-title { 
+    color: var(--accent); 
+    font-weight: bold; 
+    margin-bottom: 5px; 
+    margin-top: 10px; 
+    text-transform: uppercase; 
+    font-size: 11px; 
+    letter-spacing: 1px; 
+  }
+  .task { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: #252538; 
+    padding: 12px; 
+    margin-top: 8px; 
+    border-radius: 6px; 
+  }
+  .task.done { opacity: 0.5; text-decoration: line-through; border-left: 4px solid var(--accent); }
+  .task.queued { border-left: 4px solid var(--warning); }
+  .task.approved { border-left: 4px solid var(--success); }
+  .task.active { border-left: 4px solid var(--accent); background: rgba(52, 211, 153, 0.1); }
+  .small { font-size: 12px; color: #aaa; margin-top: 4px; }
+  #keySetup { 
+    background: rgba(248, 113, 113, 0.1); 
+    border: 1px solid var(--danger); 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin-bottom: 15px; 
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+  }
+  .nav-tabs button {
+    width: auto;
+    padding: 8px 16px;
+    margin-top: 0;
+    background: #2a2a40;
+    border: none;
+    border-radius: 4px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .nav-tabs button.active {
+    background: var(--accent);
+    color: #000;
+  }
+  .screen {
+    display: none;
+  }
+  .screen.active {
+    display: block;
+  }
+  .queue-item {
+    background: #252538;
+    padding: 15px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #333;
+  }
+  .queue-item.queued { border-left-color: var(--warning); }
+  .queue-item.approved { border-left-color: var(--success); }
+  .queue-item.active { border-left-color: var(--accent); background: rgba(52, 211, 153, 0.1); }
+  .queue-item.completed { border-left-color: var(--success); opacity: 0.6; }
+  .queue-item.archived { border-left-color: #555; opacity: 0.4; }
+  .queue-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .queue-actions button {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 12px;
+    margin-top: 0;
+    font-size: 12px;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  .status-badge.queued { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+  .status-badge.approved { background: rgba(52, 211, 153, 0.2); color: var(--success); }
+  .status-badge.active { background: rgba(52, 211, 153, 0.3); color: var(--accent); }
+  .status-badge.completed { background: rgba(52, 211, 153, 0.2); color: var(--success); }
+  .status-badge.archived { background: rgba(100, 100, 100, 0.2); color: #aaa; }
+  .metric {
+    background: #15152a;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    border-left: 3px solid var(--accent);
+  }
+  .metric-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--accent);
+  }
+  .metric-label {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 4px;
+  }
+  .ai-context {
+    background: rgba(52, 211, 153, 0.1);
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 12px;
+    border-left: 2px solid var(--accent);
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div style="font-weight: bold; letter-spacing: 0.5px;">CEO OS v4.2</div>
+  <div id="score" style="color: var(--accent); font-weight: bold;">0% Executed</div>
+</header>
+
+<div class="container">
+
+  <div id="keySetup" style="display: none;">
+    <h3 style="margin-top:0; color: var(--danger);">System Offline: Gemini Key Required</h3>
+    <p class="small">Enter your Gemini API Key below. This key is saved locally in your browser's hardware storage and never hits external servers.</p>
+    <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+    <button onclick="saveApiKey()" style="background: var(--accent); color: #000;">Initialize Brain</button>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="active" onclick="switchScreen('COMMAND')">AI Command</button>
+    <button onclick="switchScreen('QUEUE')">Execution Queue</button>
+    <button onclick="switchScreen('MANUAL')">Manual Tasks</button>
+    <button onclick="switchScreen('ANALYTICS')">Analytics</button>
+  </div>
+
+  <div id="COMMAND" class="screen active">
+    <div class="card">
+      <h3 style="margin-top:0; font-size: 16px;">AI Command Panel</h3>
+      <input id="aiInput" placeholder="Command: 'plan my day', 'detect overload', 'prioritize'"/>
+      <button onclick="runAI()" class="ai-btn" id="aiBtn">Engage Gemini Brain</button>
+    </div>
+
+    <div id="aiOutput"></div>
+  </div>
+
+  <div id="QUEUE" class="screen">
+    <div class="card">
+      <h3 style="margin-top:0; font-size: 16px;">Execution Queue Dashboard</h3>
+      <div id="queueScore" class="metric">
+        <div class="metric-value" id="efficiencyScore">0%</div>
+        <div class="metric-label">Execution Efficiency</div>
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 10px; font-size: 12px;">
+        <div style="flex: 1; background: #252538; padding: 8px; border-radius: 4px;">
+          Queued: <span style="color: var(--warning);" id="countQueued">0</span>
+        </div>
+        <div style="flex: 1; background: #252538; padding: 8px; border-radius: 4px;">
+          Approved: <span style="color: var(--success);" id="countApproved">0</span>
+        </div>
+        <div style="flex: 1; background: #252538; padding: 8px; border-radius: 4px;">
+          Active: <span style="color: var(--accent);" id="countActive">0</span>
+        </div>
+        <div style="flex: 1; background: #252538; padding: 8px; border-radius: 4px;">
+          Completed: <span style="color: var(--success);" id="countCompleted">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="queueList"></div>
+  </div>
+
+  <div id="MANUAL" class="screen">
+    <div class="card">
+      <h3 style="margin-top:0; font-size: 16px;">Manual Task Creation</h3>
+      <input id="taskText" placeholder="Define execution task...">
+      <select id="priority">
+        <option value="3">High Impact (Level 3 Visionary)</option>
+        <option value="2">Medium Impact (Level 2 Manager)</option>
+        <option value="1">Low Impact (Level 1 Operator)</option>
+      </select>
+      <button onclick="addManualTask()">Add to Queue</button>
+    </div>
+
+    <div id="taskList" style="margin-top: 15px;"></div>
+  </div>
+
+  <div id="ANALYTICS" class="screen">
+    <div class="card">
+      <h3 style="margin-top:0; font-size: 16px;">Execution Analytics</h3>
+      <div id="analyticsContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js').catch(err => console.log('SW registration failed:', err));
+}
+
+let DB = { tasks: [], queue: [], aiLog: [], analytics: { totalExecuted: 0, totalApproved: 0, totalRejected: 0 } };
+let geminiKey = localStorage.getItem("GEMINI_API_KEY");
+
+function init() {
+  if(!geminiKey) {
+    document.getElementById("keySetup").style.display = "block";
+  }
+  let d = localStorage.getItem("CEO_OS_V42");
+  if(d) DB = JSON.parse(d);
+  renderQueue();
+  renderTasks();
+  updateAnalytics();
+}
+
+function switchScreen(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById(screen).classList.add('active');
+  event.target.classList.add('active');
+  
+  if(screen === 'QUEUE') renderQueue();
+  if(screen === 'ANALYTICS') renderAnalytics();
+}
+
+function saveApiKey() {
+  const key = document.getElementById("apiKeyInput").value.trim();
+  if(key) {
+    localStorage.setItem("GEMINI_API_KEY", key);
+    geminiKey = key;
+    document.getElementById("keySetup").style.display = "none";
+    alert("System Online.");
+  }
+}
+
+function save() { localStorage.setItem("CEO_OS_V42", JSON.stringify(DB)); }
+
+// ===== EXECUTION QUEUE SYSTEM =====
+
+function addToQueue(task, source = "user") {
+  DB.queue.push({
+    id: Date.now(),
+    text: task.text,
+    priority: task.priority || 1,
+    status: "queued",
+    source: source,
+    aiContext: task.aiContext || null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+  
+  save();
+  renderQueue();
+}
+
+function pushAIToQueue(aiData) {
+  if(aiData.priority_tasks && Array.isArray(aiData.priority_tasks)) {
+    aiData.priority_tasks.forEach(t => {
+      addToQueue({
+        text: t.task,
+        priority: t.priority || 1,
+        aiContext: t.reason || null
+      }, "ai");
+    });
+  }
+}
+
+function renderQueue() {
+  const el = document.getElementById("queueList");
+  el.innerHTML = "";
+
+  let filtered = DB.queue.filter(q => q.status !== "archived");
+  
+  if(filtered.length === 0) {
+    el.innerHTML = '<div class="card" style="text-align: center; color: #aaa;">Queue is empty. Add tasks or run AI commands.</div>';
+    return;
+  }
+
+  filtered.forEach(q => {
+    el.innerHTML += `
+      <div class="queue-item ${q.status}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="flex: 1;">
+            <strong style="font-size: 14px;">${q.text}</strong>
+            <div class="small">
+              Source: <span style="color: ${q.source === 'ai' ? 'var(--accent)' : '#aaa'}">${q.source === 'ai' ? '🤖 AI' : '👤 User'}</span> | 
+              Priority: L${q.priority} | 
+              Created: ${new Date(q.createdAt).toLocaleDateString()}
+            </div>
+            ${q.aiContext ? `<div class="ai-context">💡 ${q.aiContext}</div>` : ''}
+            <span class="status-badge ${q.status}">${q.status}</span>
+          </div>
+        </div>
+        <div class="queue-actions">
+          ${renderQueueButtons(q)}
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderQueueButtons(q) {
+  if(q.status === "queued") {
+    return `
+      <button onclick="approveTask(${q.id})" class="success-btn">Approve</button>
+      <button onclick="rejectTask(${q.id})" class="secondary-btn">Reject</button>
+    `;
+  }
+
+  if(q.status === "approved") {
+    return `
+      <button onclick="startTask(${q.id})" class="ai-btn">Start</button>
+      <button onclick="rejectTask(${q.id})" class="secondary-btn">Cancel</button>
+    `;
+  }
+
+  if(q.status === "active") {
+    return `
+      <button onclick="completeTask(${q.id})" class="success-btn">Complete</button>
+      <button onclick="rejectTask(${q.id})" class="secondary-btn">Pause</button>
+    `;
+  }
+
+  if(q.status === "completed") {
+    return `
+      <button onclick="archiveTask(${q.id})" class="secondary-btn">Archive</button>
+    `;
+  }
+
+  return '';
+}
+
+function approveTask(id) {
+  let q = DB.queue.find(x => x.id === id);
+  if(q) {
+    q.status = "approved";
+    q.updatedAt = new Date().toISOString();
+    DB.analytics.totalApproved++;
+    save();
+    renderQueue();
+    updateAnalytics();
+  }
+}
+
+function rejectTask(id) {
+  let q = DB.queue.find(x => x.id === id);
+  if(q) {
+    q.status = "archived";
+    if(q.source === "ai") DB.analytics.totalRejected++;
+    DB.analytics.totalApproved = Math.max(0, DB.analytics.totalApproved - 1);
+    save();
+    renderQueue();
+    updateAnalytics();
+  }
+}
+
+function startTask(id) {
+  let q = DB.queue.find(x => x.id === id);
+  if(q) {
+    q.status = "active";
+    q.updatedAt = new Date().toISOString();
+    save();
+    renderQueue();
+  }
+}
+
+function completeTask(id) {
+  let q = DB.queue.find(x => x.id === id);
+  if(q) {
+    q.status = "completed";
+    q.updatedAt = new Date().toISOString();
+    DB.analytics.totalExecuted++;
+    save();
+    renderQueue();
+    updateAnalytics();
+  }
+}
+
+function archiveTask(id) {
+  let q = DB.queue.find(x => x.id === id);
+  if(q) {
+    q.status = "archived";
+    save();
+    renderQueue();
+  }
+}
+
+function addManualTask() {
+  const text = document.getElementById("taskText").value.trim();
+  if(!text) return;
+  
+  addToQueue({
+    text: text,
+    priority: Number(document.getElementById("priority").value),
+    aiContext: null
+  }, "user");
+  
+  document.getElementById("taskText").value = "";
+}
+
+// ===== LEGACY TASK SYSTEM (BACKWARDS COMPATIBLE) =====
+
+function toggleTask(id) {
+  let task = DB.tasks.find(t => t.id === id);
+  if(task) {
+    task.done = !task.done;
+    task.status = task.done ? "completed" : "pending";
+    save();
+    renderTasks();
+  }
+}
+
+function renderTasks() {
+  let list = document.getElementById("taskList");
+  list.innerHTML = "";
+  let doneCount = 0;
+
+  let sorted = [...DB.tasks].sort((a,b) => (a.done === b.done) ? b.priority - a.priority : a.done ? 1 : -1);
+  
+  sorted.forEach(t => {
+    if(t.done) doneCount++;
+    list.innerHTML += `
+      <div class="task ${t.done ? 'done' : ''}">
+        <div>
+          <strong style="font-size: 14px;">${t.text}</strong>
+          <div class="small">Priority: L${t.priority} | Status: ${t.status.toUpperCase()}</div>
+        </div>
+        <button onclick="toggleTask(${t.id})" style="width: auto; padding: 8px 12px; margin-top:0; background: ${t.done ? '#444' : 'var(--danger)'}">
+          ${t.done ? "Undo" : "Done"}
+        </button>
+      </div>
+    `;
+  });
+
+  let percent = DB.tasks.length ? Math.round((doneCount / DB.tasks.length) * 100) : 0;
+  document.getElementById("score").innerText = percent + "% Executed";
+}
+
+// ===== ANALYTICS ENGINE =====
+
+function updateAnalytics() {
+  let approved = DB.queue.filter(q => q.status === "approved").length;
+  let completed = DB.queue.filter(q => q.status === "completed").length;
+  let queued = DB.queue.filter(q => q.status === "queued").length;
+  let active = DB.queue.filter(q => q.status === "active").length;
+
+  let efficiency = approved > 0 ? Math.round((completed / approved) * 100) : 0;
+
+  document.getElementById("efficiencyScore").innerText = efficiency + "%";
+  document.getElementById("countQueued").innerText = queued;
+  document.getElementById("countApproved").innerText = approved;
+  document.getElementById("countActive").innerText = active;
+  document.getElementById("countCompleted").innerText = completed;
+
+  let overall = DB.queue.length > 0 ? Math.round(((completed + approved + active) / DB.queue.filter(q => q.status !== 'archived').length) * 100) : 0;
+  document.getElementById("score").innerText = overall + "% Executed";
+}
+
+function renderAnalytics() {
+  const el = document.getElementById("analyticsContent");
+  
+  let total = DB.queue.length;
+  let completed = DB.queue.filter(q => q.status === "completed").length;
+  let approved = DB.queue.filter(q => q.status === "approved").length;
+  let active = DB.queue.filter(q => q.status === "active").length;
+  let queued = DB.queue.filter(q => q.status === "queued").length;
+  let archived = DB.queue.filter(q => q.status === "archived").length;
+  let aiGenerated = DB.queue.filter(q => q.source === "ai").length;
+  let userGenerated = DB.queue.filter(q => q.source === "user").length;
+
+  let efficiency = approved > 0 ? Math.round((completed / approved) * 100) : 0;
+  let approvalRate = total > 0 ? Math.round(((approved + active + completed) / total) * 100) : 0;
+
+  el.innerHTML = `
+    <div class="metric">
+      <div class="metric-value">${total}</div>
+      <div class="metric-label">Total Queue Items</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value">${completed}</div>
+      <div class="metric-label">Completed Tasks</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value">${efficiency}%</div>
+      <div class="metric-label">Execution Efficiency (Completed/Approved)</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value">${approvalRate}%</div>
+      <div class="metric-label">Approval Rate</div>
+    </div>
+
+    <div style="margin-top: 20px; background: #15152a; padding: 15px; border-radius: 8px;">
+      <div style="color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 12px; text-transform: uppercase;">Queue Breakdown</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+        <div>🟡 Queued: ${queued}</div>
+        <div>✅ Approved: ${approved}</div>
+        <div>⚡ Active: ${active}</div>
+        <div>🏁 Completed: ${completed}</div>
+        <div>📦 Archived: ${archived}</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 15px; background: #15152a; padding: 15px; border-radius: 8px;">
+      <div style="color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 12px; text-transform: uppercase;">Source Breakdown</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+        <div>🤖 AI Generated: ${aiGenerated}</div>
+        <div>👤 User Generated: ${userGenerated}</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 15px; background: #15152a; padding: 15px; border-radius: 8px;">
+      <div style="color: var(--accent); font-weight: bold; margin-bottom: 10px; font-size: 12px; text-transform: uppercase;">Lifetime Metrics</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+        <div>✔️ Total Executed: ${DB.analytics.totalExecuted}</div>
+        <div>📋 Total Approved: ${DB.analytics.totalApproved}</div>
+        <div>❌ Total Rejected: ${DB.analytics.totalRejected}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== AI INTEGRATION (v4.2) =====
+
+async function runAI() {
+  if(!geminiKey) { alert("API Key missing. Unlock system first."); return; }
+  
+  let input = document.getElementById("aiInput").value.trim();
+  if(!input) input = "Review my current task load and suggest an execution plan.";
+  
+  const btn = document.getElementById("aiBtn");
+  const outputBox = document.getElementById("aiOutput");
+  
+  btn.innerText = "Processing System Matrix...";
+  outputBox.innerHTML = `<div class="ai-box">Analyzing System State...</div>`;
+
+  let context = { 
+    pendingTasks: DB.queue.filter(t => t.status === "queued" || t.status === "approved"),
+    completedTasks: DB.queue.filter(t => t.status === "completed").length,
+    queueLength: DB.queue.length
+  };
+
+  const prompt = `
+You are the internal AI execution engine for CEO Shahriar's task management system (CEO OS v4.2).
+
+Your job is to analyze the pending workload and CEO's command, then output ONLY a JSON object with prioritized execution recommendations.
+
+Current System State:
+- Pending/Approved Tasks: ${context.pendingTasks.length}
+- Completed Tasks: ${context.completedTasks}
+- Total Queue Items: ${context.queueLength}
+- Pending Tasks: ${JSON.stringify(context.pendingTasks.map(t => ({ text: t.text, priority: t.priority, status: t.status })))}
+
+CEO Command: "${input}"
+
+You MUST respond with ONLY a valid JSON object in this exact format. No markdown, no backticks, no text outside the JSON:
+{
+  "summary": "Brief 1-2 sentence analysis of current workload and CEO command.",
+  "priority_tasks": [
+    {
+      "task": "Specific actionable task (1 sentence)",
+      "priority": 3,
+      "reason": "Why this is important right now",
+      "impact": "Expected outcome"
+    },
+    {
+      "task": "Second priority task",
+      "priority": 2,
+      "reason": "Why this matters",
+      "impact": "Expected outcome"
+    }
+  ]
+}
+  `;
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+
+    if(!response.ok) throw new Error("API Connection Failed");
+
+    let data = await response.json();
+    let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    
+    let cleanJSONStr = "";
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanJSONStr = jsonMatch[0];
+    } else {
+      throw new Error("No valid JSON structure found in response string.");
+    }
+    
+    let parsedAI = JSON.parse(cleanJSONStr);
+    
+    // Add to AI log
+    DB.aiLog.push({ command: input, result: parsedAI, time: new Date().toISOString() });
+    
+    // Push to execution queue
+    pushAIToQueue(parsedAI);
+
+    save();
+
+    outputBox.innerHTML = `
+      <div class="ai-box">
+        <div class="ai-section-title">Strategic Summary</div>
+        <div style="font-size: 14px; line-height: 1.4;">${parsedAI.summary || "No summary provided."}</div>
+        
+        <div class="ai-section-title">Recommended Queue Items</div>
+        ${(parsedAI.priority_tasks || []).map((t, i) => `
+          <div style="background: rgba(52, 211, 153, 0.1); padding: 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid var(--accent);">
+            <div style="font-weight: bold; color: #fff; font-size: 13px;">⚡ L${t.priority}: ${t.task}</div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 4px;">📌 ${t.reason}</div>
+            <div style="font-size: 12px; color: var(--accent); margin-top: 4px;">→ ${t.impact}</div>
+          </div>
+        `).join('')}
+        
+        <div style="margin-top: 12px; padding: 10px; background: rgba(52, 211, 153, 0.1); border-radius: 6px; font-size: 12px; color: #aaa;">
+          ✅ ${(parsedAI.priority_tasks || []).length} items queued for your approval
+        </div>
+      </div>
+    `;
+
+  } catch(e) {
+    outputBox.innerHTML = `<div class="ai-box" style="border-left-color: var(--danger);"><strong>Error Parsing Strategy Data.</strong> The AI output structure drifted or connection failed. Try again.</div>`;
+    console.error("OS Execution Exception: ", e);
+  } finally {
+    btn.innerText = "Engage Gemini Brain";
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
